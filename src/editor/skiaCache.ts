@@ -3,9 +3,9 @@ import type {
   SkImage,
   SkParagraph,
   SkRuntimeEffect,
-  SkTypefaceFontProvider,
 } from '@shopify/react-native-skia';
 import type { AssetBytes } from './assetRegistry';
+import { fontProvider } from './fonts';
 
 /**
  * Per-runtime caches of decoded Skia objects (images, fonts, paragraphs,
@@ -19,7 +19,6 @@ import type { AssetBytes } from './assetRegistry';
 
 type Cache = {
   images: Record<string, SkImage>;
-  fontProvider: SkTypefaceFontProvider | null;
   paragraphs: Record<string, SkParagraph>;
   paragraphKeys: string[];
   effects: Record<string, SkRuntimeEffect>;
@@ -28,17 +27,11 @@ type Cache = {
 const getCache = (): Cache => {
   'worklet';
   const holder = globalThis as { __waveCache?: Cache };
-  holder.__waveCache ??= {
-    images: {},
-    fontProvider: null,
-    paragraphs: {},
-    paragraphKeys: [],
-    effects: {},
-  };
+  holder.__waveCache ??= { images: {}, paragraphs: {}, paragraphKeys: [], effects: {} };
   return holder.__waveCache;
 };
 
-/** Decodes registered images and fonts into this runtime's cache. */
+/** Decodes registered images into this runtime's cache. */
 export const primeSkiaCaches = (assets: AssetBytes) => {
   'worklet';
   const cache = getCache();
@@ -46,14 +39,6 @@ export const primeSkiaCaches = (assets: AssetBytes) => {
     if (cache.images[id]) continue;
     const image = Skia.Image.MakeImageFromEncoded(Skia.Data.fromBytes(bytes));
     if (image) cache.images[id] = image;
-  }
-  if (!cache.fontProvider) {
-    const provider = Skia.TypefaceFontProvider.Make();
-    for (const [family, bytes] of Object.entries(assets.fonts)) {
-      const typeface = Skia.Typeface.MakeFreeTypeFaceFromData(Skia.Data.fromBytes(bytes));
-      if (typeface) provider.registerFont(typeface, family);
-    }
-    cache.fontProvider = provider;
   }
 };
 
@@ -84,14 +69,13 @@ export const getParagraph = (
 ): SkParagraph | null => {
   'worklet';
   const cache = getCache();
-  if (!cache.fontProvider) return null;
   const key = `${text}|${family}|${fontSize.toFixed(1)}|${color}|${layoutWidth.toFixed(0)}`;
   const cached = cache.paragraphs[key];
   if (cached) return cached;
 
   const builder = Skia.ParagraphBuilder.Make(
     { textAlign: TextAlign.Center, maxLines: 2 },
-    cache.fontProvider
+    fontProvider
   );
   builder.pushStyle({
     fontFamilies: [family],

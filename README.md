@@ -9,7 +9,9 @@ Third app of the tutorial series after
 one flips the pipeline — the composition contains **no video at all**, every
 pixel is generated from the music.
 
-<p align="center"><em>Pick a track → choose a scene & theme → export a 1080×1920 video with the audio baked in.</em></p>
+<p align="center"><img src="docs/demo.gif" width="270" alt="Wave Studio demo"/></p>
+<p align="center"><em>Pick a track → choose a scene & theme → export a 1080×1920 video with the audio baked in.</em><br/>
+<a href="docs/demo.mp4">▶ Full demo video (with sound)</a></p>
 
 ## Features
 
@@ -79,8 +81,9 @@ All in [`scenes.ts`](src/visualizer/scenes.ts):
   highs flash the highlights. The audio bands are just shader uniforms.
 
 Skia objects are cached per worklet runtime — compiled shader, decoded
-artwork, laid-out paragraphs ([`skiaCache.ts`](src/editor/skiaCache.ts));
-artwork/fonts travel between runtimes as raw bytes.
+artwork, laid-out paragraphs ([`skiaCache.ts`](src/editor/skiaCache.ts)).
+Artwork travels between runtimes as raw bytes; the typeface provider is
+created once on the JS thread and captured ([`fonts.ts`](src/editor/fonts.ts)).
 
 ## Bundled assets
 

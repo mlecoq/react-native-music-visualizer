@@ -1,6 +1,7 @@
 import { Asset } from 'expo-asset';
 import type { Track, TrackAnalysis } from '../audio/types';
-import { registerFont, registerImage } from './assetRegistry';
+import { registerImage } from './assetRegistry';
+import { registerFontFile } from './fonts';
 
 /**
  * Bundled content: three original synthesized tracks, each with its cover
@@ -82,6 +83,6 @@ export const registerCustomCover = (trackId: string, uri: string): string => {
 
 export const loadEditorFonts = async () => {
   for (const [family, module] of Object.entries(FONT_FILES)) {
-    registerFont(family, await localUri(module));
+    registerFontFile(family, await localUri(module));
   }
 };

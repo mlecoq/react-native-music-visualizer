@@ -4,7 +4,7 @@
   "main": "index.ts",
   "dependencies": {
     "@azzapp/react-native-skia-video": "^0.10.1",
-    "@shopify/react-native-skia": "^2.6.4",
+    "@shopify/react-native-skia": "^2.10.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "expo": "~57.0.10",
