@@ -66,7 +66,15 @@ export const useExport = (track: Track | null, settings: VisualizerSettings) => 
             assets,
           });
         },
-        onProgress: ({ framesCompleted, nbFrames }) => setProgress(framesCompleted / nbFrames),
+        // One scheduled state update per frame is thousands over a full
+        // song — enough to starve the JS thread and freeze the progress
+        // bar at 0%. Only commit whole-percent changes; returning the
+        // previous value lets React bail out of the render entirely.
+        onProgress: ({ framesCompleted, nbFrames }) =>
+          setProgress((previous) => {
+            const next = framesCompleted / nbFrames;
+            return Math.round(next * 100) > Math.round(previous * 100) ? next : previous;
+          }),
       });
 
       setPhase('saving');

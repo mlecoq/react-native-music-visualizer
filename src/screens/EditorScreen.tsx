@@ -67,8 +67,21 @@ export const EditorScreen = () => {
       </View>
 
       <View className="flex-1 items-center justify-center">
-        {track ? (
+        {track && exporter.phase !== 'rendering' ? (
           <VisualizerPreview track={track} settings={settings} size={previewSize} />
+        ) : track ? (
+          /* The preview player is torn down while exporting: its scenes and
+             audio would otherwise compete with the export for the GPU and
+             the JS thread for the whole length of the song. */
+          <View
+            className="items-center justify-center gap-4 rounded-3xl border border-border bg-surface"
+            style={previewSize}
+          >
+            <Icon name="download-2-line" size={40} color="#2DD4BF" />
+            <Text className="text-center text-sm text-muted">
+              Rendering your video…{'\n'}The preview resumes when it's done.
+            </Text>
+          </View>
         ) : (
           <View
             className="items-center justify-center gap-4 rounded-3xl border-2 border-dashed border-border px-8"
