@@ -1,3 +1,4 @@
+import { File, Paths } from 'expo-file-system';
 import { decodeAudioData } from 'react-native-audio-api';
 import type { TrackAnalysis } from './types';
 
@@ -71,13 +72,41 @@ const edges = Array.from({ length: SPECTRUM_BINS + 1 }, (_, i) =>
 
 const yieldToUi = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
 
+const hashUri = (uri: string): string => {
+  let hash = 5381;
+  for (let i = 0; i < uri.length; i++) hash = ((hash << 5) + hash + uri.charCodeAt(i)) >>> 0;
+  return hash.toString(36);
+};
+
+/**
+ * decodeAudioData routes by file EXTENSION: mp3/wav/flac/ogg go to its
+ * miniaudio decoder, which chokes on some real-world files (heavy ID3v2
+ * tags, AAC masquerading as .mp3…). Its FFmpeg decoder probes CONTENT — but
+ * only .mp4/.m4a/.aac extensions reach it. So when the first attempt fails,
+ * retry under an .mp4 name: FFmpeg opens it and identifies the actual
+ * format, whatever the file was called.
+ */
+const decodeRobust = async (uri: string, sampleRate: number) => {
+  try {
+    return await decodeAudioData(uri, sampleRate);
+  } catch (firstError) {
+    const copy = new File(Paths.cache, `decode-${hashUri(uri)}.mp4`);
+    try {
+      if (!copy.exists) new File(uri).copy(copy);
+      return await decodeAudioData(copy.uri, sampleRate);
+    } catch {
+      throw firstError;
+    }
+  }
+};
+
 type RawFrame = { bass: number; mid: number; high: number; spectrum: number[]; wave: number[] };
 
 export const analyzeTrack = async (
   uri: string,
   onProgress?: (fraction: number) => void
 ): Promise<TrackAnalysis> => {
-  const buffer = await decodeAudioData(uri, SAMPLE_RATE);
+  const buffer = await decodeRobust(uri, SAMPLE_RATE);
   if (buffer.duration > MAX_TRACK_MINUTES * 60) {
     throw new Error(
       `This track is longer than ${MAX_TRACK_MINUTES} minutes — decoding and ` +
