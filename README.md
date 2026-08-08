@@ -17,6 +17,9 @@ pixel is generated from the music.
 
 - 🎵 **3 bundled tracks** (original, synthesized) with cover art and
   precomputed per-frame analysis — try every scene instantly
+- 📂 **Your own music**: pick any audio file and it is decoded
+  (react-native-audio-api) and analyzed **on your device** in a few
+  seconds — same FFT, same output as the bundled JSONs
 - 🌀 **3 scenes**: Ring (radial spectrum around the spinning artwork), Scope
   (glowing oscilloscope + spectrum floor), Nebula (audio-reactive SkSL
   shader clouds)
@@ -64,7 +67,20 @@ const frame = analysisAt(track.analysis, currentTime);
 
 Deterministic input → deterministic render: scenes are pure functions of
 `(time, analysisFrame, theme)`, which is also why preview and export can't
-drift apart. To analyze your own tracks:
+drift apart.
+
+### Your own music, analyzed on-device
+
+The same analysis also runs on the phone
+([`analyzeTrack.ts`](src/audio/analyzeTrack.ts)): pick any audio file and
+[react-native-audio-api](https://github.com/software-mansion/react-native-audio-api)'s
+`decodeAudioData` turns it into PCM, then the exact FFT pass from the
+build-time script produces a `TrackAnalysis` — the visualizer cannot tell a
+picked song from a bundled one, which is the point of analysis-as-data. A
+three-minute song is ~5400 FFT frames of plain JS, so the loop yields to the
+UI and reports progress; tracks longer than 10 minutes are refused instead
+of running out of memory (`decodeAudioData` holds the whole file). The
+build-time script is still there for tracks you want to ship:
 `node scripts/analyze-track.mjs song.m4a > song.analysis.json`.
 
 ### The scenes

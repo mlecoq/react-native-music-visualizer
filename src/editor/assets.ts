@@ -1,4 +1,5 @@
 import { Asset } from 'expo-asset';
+import { analyzeTrack } from '../audio/analyzeTrack';
 import type { Track, TrackAnalysis } from '../audio/types';
 import { registerImage } from './assetRegistry';
 import { registerFontFile } from './fonts';
@@ -72,6 +73,34 @@ export const loadTrack = async (meta: TrackMeta): Promise<Track> => {
     coverId,
     analysis: meta.analysis,
   };
+};
+
+/**
+ * A song from the user's own library: decoded and analyzed on-device
+ * (see audio/analyzeTrack.ts) into the exact shape the bundled JSONs have.
+ * No artwork until the user picks one — the scenes handle a null cover.
+ */
+export const loadCustomTrack = async (
+  uri: string,
+  filename: string,
+  onProgress?: (fraction: number) => void
+): Promise<Track> => {
+  const analysis = await analyzeTrack(uri, onProgress);
+  return {
+    id: `custom-${hashUri(uri)}`,
+    title: filename.replace(/\.[^.]+$/, ''),
+    artist: 'From your library',
+    uri,
+    duration: analysis.duration,
+    coverId: '',
+    analysis,
+  };
+};
+
+const hashUri = (uri: string): string => {
+  let hash = 5381;
+  for (let i = 0; i < uri.length; i++) hash = ((hash << 5) + hash + uri.charCodeAt(i)) >>> 0;
+  return hash.toString(36);
 };
 
 /** Replaces a track's artwork with an image from the gallery. */
